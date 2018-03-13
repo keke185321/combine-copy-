@@ -4,8 +4,8 @@ import cv2
 import pylab
 import os
 import sys
-
-
+#from matplotlib.pyplot import plot, ion, show
+import pulsepre
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -25,6 +25,7 @@ class findFaceGetPulse(object):
         self.frame_in = np.zeros((10, 10))
         self.frame_out = np.zeros((10, 10))
         self.fps = 0
+	self.pulse1=[]
         self.buffer_size = 250
         #self.window = np.hamming(self.buffer_size)
         self.data_buffer = []
@@ -50,7 +51,7 @@ class findFaceGetPulse(object):
 
         self.idx = 1
         self.find_faces = False
-
+	self.num=-200
     def find_faces_toggle(self):
         self.find_faces = not self.find_faces
         return self.find_faces
@@ -115,19 +116,25 @@ class findFaceGetPulse(object):
         pylab.savefig("data_fft.png")
         quit()
     
-    def run(self, cam, result,EMOTIONS):
-	print 'start'
+    def run(self, cam, result,EMOTIONS,ALARM_ON,root):
+	#print 'start'
         self.frame_out = self.frame_in
 	
         self.gray = cv2.equalizeHist(cv2.cvtColor(self.frame_in,
                                                   cv2.COLOR_BGR2GRAY))
         col = (100, 255, 100)
-	cv2.putText(
+	'''cv2.putText(
             self.frame_out, str(result),
-            (10, 25), cv2.FONT_HERSHEY_PLAIN, 0.8, col)
+            (10, 25), cv2.FONT_HERSHEY_PLAIN, 0.8, col)'''
 	cv2.putText(
             self.frame_out, str(EMOTIONS),
-            (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
+            (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
+	if ALARM_ON:
+		cv2.putText(self.frame_out, "DROWSINESS ALERT!", (10, 50),
+			    cv2.FONT_HERSHEY_PLAIN, 1.25, (0, 0, 255), 2)
+	else:
+		cv2.putText(self.frame_out, "AWAKE", (10, 50),
+			    cv2.FONT_HERSHEY_PLAIN, 1.25, (0, 0, 255), 2)
         detected = list(self.face_cascade.detectMultiScale(self.gray,
                                                             scaleFactor=1.3,
                                                             minNeighbors=4,
@@ -140,17 +147,17 @@ class findFaceGetPulse(object):
             if self.shift(detected[-1]) > 10:
                 self.face_rect = detected[-1]
         forehead1 = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
-        self.draw_rect(self.face_rect, col=(255, 0, 0))
+        #self.draw_rect(self.face_rect, col=(255, 0, 0))
         x, y, w, h = self.face_rect
-        cv2.putText(self.frame_out, "Face",
+        cv2.putText(self.frame_out, "",
                     (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
         self.draw_rect(forehead1)
         x, y, w, h = forehead1
-        cv2.putText(self.frame_out, "Forehead",
-                    (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
-	print 'haha'
+        #cv2.putText(self.frame_out, "Forehead",
+        #            (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+	
         if set(self.face_rect) == set([1, 1, 2, 2]):
-	    print 'break'
+	    #print 'break'
             return
         vals = self.get_subface_means(forehead1)
 	#print vals
@@ -158,6 +165,8 @@ class findFaceGetPulse(object):
 	#print self.data_buffer
         L = len(self.data_buffer)
 	self.times.append(time.time() - self.t0)
+	#print 'self.t0: ',self.t0
+	#print 'time: ',time.time()
         if L > self.buffer_size:
             self.data_buffer = self.data_buffer[-self.buffer_size:]
             self.times = self.times[-self.buffer_size:]
@@ -166,14 +175,14 @@ class findFaceGetPulse(object):
         processed = np.array(self.data_buffer)
 	
         self.samples = processed
-	print L
+	#print L
 	#print self.times
         if L > 10:
             self.output_dim = processed.shape[0]
 
             self.fps = float(L) / (self.times[-1] - self.times[0])
             even_times = np.linspace(self.times[0], self.times[-1], L)
-	    print 'processed\n',len(processed), '\nself\n',len(self.times)
+	    #print 'processed\n',len(processed), '\nself\n',len(self.times)
             interpolated = np.interp(even_times, self.times, processed)
             interpolated = np.hamming(L) * interpolated
             interpolated = interpolated - np.mean(interpolated)
@@ -191,40 +200,47 @@ class findFaceGetPulse(object):
             pfreq = freqs[idx]
             self.freqs = pfreq
             self.fft = pruned
-            idx2 = np.argmax(pruned)
+	    #print 'prune',pruned
+            if pruned!=[]: 
+		    idx2 = np.argmax(pruned)
+		    t = (np.sin(phase[idx2]) + 1.) / 2.
+		    t = 0.9 * t + 0.1
+		    alpha = t
+		    beta = 1 - t
 
-            t = (np.sin(phase[idx2]) + 1.) / 2.
-            t = 0.9 * t + 0.1
-            alpha = t
-            beta = 1 - t
+		    self.bpm = self.freqs[idx2]
+		    self.idx += 1
 
-            self.bpm = self.freqs[idx2]
-            self.idx += 1
-
-            x, y, w, h = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
-            r = alpha * self.frame_in[y:y + h, x:x + w, 0]
-            g = alpha * \
-                self.frame_in[y:y + h, x:x + w, 1] + \
-                beta * self.gray[y:y + h, x:x + w]
-            b = alpha * self.frame_in[y:y + h, x:x + w, 2]
-            self.frame_out[y:y + h, x:x + w] = cv2.merge([r,
-                                                          g,
-                                                          b])
-            x1, y1, w1, h1 = self.face_rect
-            self.slices = [np.copy(self.frame_out[y1:y1 + h1, x1:x1 + w1, 1])]
-            col = (100, 255, 100)
-            gap = (self.buffer_size - L) / self.fps
-            # self.bpms.append(bpm)
-            # self.ttimes.append(time.time())
-            if gap:
-                text = "(estimate: %0.1f bpm, wait %0.0f s)" % (self.bpm, gap)
-            else:
-                text = "(estimate: %0.1f bpm)" % (self.bpm)
-            with open("pulse.txt", "a") as myfile:
-    	        myfile.write(str(self.bpm)+' ')
-
-	    # Close opend file
-	    #fo.close()
-            tsize = 1.25
-            cv2.putText(self.frame_out, text,
-                       (int(x - w / 2), int(y)+30), cv2.FONT_HERSHEY_PLAIN, tsize, col)
+		    x, y, w, h = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
+		    r = alpha * self.frame_in[y:y + h, x:x + w, 0]
+		    g = alpha * \
+		        self.frame_in[y:y + h, x:x + w, 1] + \
+		        beta * self.gray[y:y + h, x:x + w]
+		    b = alpha * self.frame_in[y:y + h, x:x + w, 2]
+		    self.frame_out[y:y + h, x:x + w] = cv2.merge([r,
+		                                                  g,
+		                                                  b])
+		    x1, y1, w1, h1 = self.face_rect
+		    self.slices = [np.copy(self.frame_out[y1:y1 + h1, x1:x1 + w1, 1])]
+		    col = (100, 255, 100)
+		    gap = (self.buffer_size - L) / self.fps
+		    # self.bpms.append(bpm)
+		    # self.ttimes.append(time.time())
+		    if gap:
+		        text = "(estimate: %0.1f bpm, wait %0.0f s)" % (self.bpm, gap)
+		    else:
+		        text = "(estimate: %0.1f bpm)" % (self.bpm)
+		    with open("pulse.txt", "a") as myfile:
+		    	myfile.write(str(self.bpm)+' ')
+			if self.num==-200:
+				self.pulse1.append(pulsepre.PulsePre(root))
+			self.num-=1
+			score=self.pulse1[0].plotpulse(self.num)
+		    # Close opend file
+		    #fo.close()
+		    tsize = 1.25
+		    cv2.putText(self.frame_out, text,
+		               (int(x - w / 2), int(y)+30), cv2.FONT_HERSHEY_PLAIN, tsize, col)
+		    if score>0:
+			    cv2.putText(self.frame_out, 'RMSE: '+str(score),
+				       (int(x - w / 2), int(y)+60), cv2.FONT_HERSHEY_PLAIN, tsize, col)

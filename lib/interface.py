@@ -1,5 +1,6 @@
 import cv2, time
 import numpy as np
+import Tkinter
 
 """
 Wraps up some interfaces to opencv user interface methods (displaying
@@ -16,8 +17,12 @@ def resize(*args, **kwargs):
 def moveWindow(*args,**kwargs):
     return
 
-def imshow(*args,**kwargs):
-    return cv2.imshow(*args,**kwargs)
+def imshow(root,args,kwargs):
+    image = cv2.cvtColor(output_frame, cv2.COLOR_BGR2RGB)
+    image = Image.fromarray(image)
+    image = ImageTk.PhotoImage(image)
+    return Tkinter.Label(root, image=kwargs).pack() 
+    #return cv2.imshow(*args,**kwargs)
     
 def destroyWindow(*args,**kwargs):
     return cv2.destroyWindow(*args,**kwargs)
@@ -123,4 +128,5 @@ def plotXY(data,size = (280,640),margin = 25,name = "data",labels=[], skip = [],
     for p in P:
         for i in range(len(p)-1):
             cv2.line(z,tuple(p[i]),tuple(p[i+1]), (255,255,255),1)    
-    cv2.imshow(name,z)
+    return z
+    #cv2.imshow(name,z)

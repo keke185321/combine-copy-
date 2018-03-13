@@ -10,9 +10,9 @@
 
 CASC_PATH = './haarcascade_files/haarcascade_frontalface_default.xml'
 SIZE_FACE = 48
-EMOTIONS = ['angry', 'tired', 'anxious', 'happy',  'sad', 'neutral']
+#EMOTIONS = ['angry', 'tired', 'anxious', 'happy',  'sad', 'neutral']
 
-
+EMOTIONS = ['happy', 'happy', 'happy', 'happy',  'happy', 'happy']
 #for CNN
 SAVE_DIRECTORY = './data/'
 SAVE_MODEL_FILENAME = 'test_emotion_model.tflearn'
