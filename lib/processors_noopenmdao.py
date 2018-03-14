@@ -116,7 +116,7 @@ class findFaceGetPulse(object):
         pylab.savefig("data_fft.png")
         quit()
     
-    def run(self, cam, result,EMOTIONS,ALARM_ON,root):
+    def run(self, cam, ALARM_ON,root):
 	#print 'start'
         self.frame_out = self.frame_in
 	
@@ -126,9 +126,9 @@ class findFaceGetPulse(object):
 	'''cv2.putText(
             self.frame_out, str(result),
             (10, 25), cv2.FONT_HERSHEY_PLAIN, 0.8, col)'''
-	cv2.putText(
-            self.frame_out, str(EMOTIONS),
-            (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
+	#cv2.putText(
+        #    self.frame_out, str(EMOTIONS),
+        #    (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
 	if ALARM_ON:
 		cv2.putText(self.frame_out, "DROWSINESS ALERT!", (10, 50),
 			    cv2.FONT_HERSHEY_PLAIN, 1.25, (0, 0, 255), 2)

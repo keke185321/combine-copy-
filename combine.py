@@ -11,8 +11,8 @@ import datetime
 import socket
 import sys
 import cv2
-from emotion_recognition import EmotionRecognition
-from constants import *
+#from emotion_recognition import EmotionRecognition
+#from constants import *
 
 from scipy.spatial import distance as dist
 #from imutils.video import VideoStream
@@ -195,7 +195,7 @@ class getPulseApp(object):
             if chr(self.pressed) == key:
                 self.key_controls[key]()
 
-    def main_loop(self,poc,eye_aspect_ratio,root):
+    def main_loop(self,eye_aspect_ratio,root):
         """
         Single iteration of the application's main loop.
         """
@@ -203,7 +203,7 @@ class getPulseApp(object):
         frame = self.cameras[self.selected_cam].get_frame()
 	#print frame.shape
         self.h, self.w, _c = frame.shape
-	result = network.predict(poc.format_image(frame))
+	#result = network.predict(poc.format_image(frame))
 	#frame = cameras[selected_cam].get_frame()
 	frame = imutils.resize(frame, width=450)
 	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -252,37 +252,36 @@ class getPulseApp(object):
 		else:
 			self.COUNTER = 0
 			ALARM_ON = False
-	if result is None:
-	  print ''
-	else:
-	  a = result[0].tolist().index(max(result[0]))
-	  # set current image frame to the processor's input
-	  self.processor.frame_in = frame
-	  # process the image frame to perform all needed analysis
-	  self.processor.run(self.selected_cam,result[0],EMOTIONS[a],ALARM_ON,root)
-	  # collect the output frame for display
-	  output_frame = self.processor.frame_out
-	  #cv2.imshow('haha',output_frame) 
-	  print output_frame
-	  if output_frame is not None:
-		  img = Image.fromarray(output_frame)
-		  imgtk = ImageTk.PhotoImage(image=img)
-		  lmain.imgtk = imgtk 
-		  lmain.configure(image=imgtk)
+	#if result is None:
+	#  print ''
+	#a = result[0].tolist().index(max(result[0]))
+	# set current image frame to the processor's input
+	self.processor.frame_in = frame
+	# process the image frame to perform all needed analysis
+	self.processor.run(self.selected_cam,ALARM_ON,root)
+	# collect the output frame for display
+	output_frame = self.processor.frame_out
+	#cv2.imshow('haha',output_frame) 
+	print output_frame
+	if output_frame is not None:
+		img = Image.fromarray(output_frame)
+		imgtk = ImageTk.PhotoImage(image=img)
+		lmain.imgtk = imgtk 
+		lmain.configure(image=imgtk)
 		  
-	  # create and/or update the raw data display if needed
-	  if self.bpm_plot:
-	      self.make_bpm_plot()
+	# create and/or update the raw data display if needed
+	if self.bpm_plot:
+	    self.make_bpm_plot()
 
-	  if self.send_serial:
-	      self.serial.write(str(self.processor.bpm) + "\r\n")
+	if self.send_serial:
+	    self.serial.write(str(self.processor.bpm) + "\r\n")
 
-	  if self.send_udp:
-	      self.sock.sendto(str(self.processor.bpm), self.udp)
+	if self.send_udp:
+	    self.sock.sendto(str(self.processor.bpm), self.udp)
 
 	  # handle any key presses
-	  self.key_handler()
-	  return output_frame
+	self.key_handler()
+	return output_frame
     def show_frame(self,frame,a):
 	img = Image.fromarray(frame)
 	imgtk = ImageTk.PhotoImage(image=img)
@@ -305,7 +304,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     App = getPulseApp(args)
     #self.root.mainloop()
-    if len(sys.argv) <= 1:
+    '''if len(sys.argv) <= 1:
       show_usage()
       exit()
     if args.train == 'train':
@@ -314,9 +313,9 @@ if __name__ == "__main__":
     elif args.train== 'poc':
       import poc
     else:
-      show_usage()
-    network = EmotionRecognition()
-    network.build_network()
+      show_usage()'''
+    #network = EmotionRecognition()
+    #network.build_network()
     #video_capture = cv2.VideoCapture(0)
     font = cv2.FONT_HERSHEY_SIMPLEX
     EYE_AR_THRESH = 0.3
@@ -344,7 +343,7 @@ if __name__ == "__main__":
     #lmain1.pack( side = tki.LEFT )
     #App.eye_aspect_ratio(te)
     while True:
-        App.main_loop(poc,App.eye_aspect_ratio,root)
+        App.main_loop(App.eye_aspect_ratio,root)
 
     root.mainloop()
     
