@@ -267,12 +267,12 @@ class getPulseApp(object):
 	output_frame = self.processor.frame_out
 	#cv2.imshow('haha',output_frame) 
 	#print output_frame
-#	if output_frame is not None:
-	#print 'face detect'
-	img = Image.fromarray(output_frame)
-	imgtk = ImageTk.PhotoImage(image=img)
-	lmain.imgtk = imgtk 
-	lmain.configure(image=imgtk)
+	if output_frame is not None:
+		#print 'face detect'
+		img = Image.fromarray(output_frame)
+		imgtk = ImageTk.PhotoImage(image=img)
+		lmain.imgtk = imgtk 
+		lmain.configure(image=imgtk)
 		  
 	# create and/or update the raw data display if needed
 	if self.bpm_plot:

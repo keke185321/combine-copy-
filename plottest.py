@@ -14,7 +14,7 @@ import pulsepre as pu
 root = Tkinter.Tk()
 pul=pu.PulsePre(root)
 
-a=range(-201,-302,-1)
+a=range(-201,-502,-1)
 for i in a:
 	pul.plotpulse(i)
 root.mainloop()

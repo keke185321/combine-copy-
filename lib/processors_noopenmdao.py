@@ -118,8 +118,15 @@ class findFaceGetPulse(object):
     
     def run(self, cam, ALARM_ON,root):
 	#print 'start'
-        self.frame_out = self.frame_in
 	
+        self.frame_out = self.frame_in
+	if ALARM_ON:
+		print 'alert'
+		cv2.putText(self.frame_out, "DROWSINESS ALERT!", (10, 50),
+			    cv2.FONT_HERSHEY_PLAIN, 1.25, (0, 0, 255), 2)
+	else:
+		cv2.putText(self.frame_out, "AWAKE", (10, 50),
+			    cv2.FONT_HERSHEY_PLAIN, 1.25, (0, 0, 255), 2)
         self.gray = cv2.equalizeHist(cv2.cvtColor(self.frame_in,
                                                   cv2.COLOR_BGR2GRAY))
         col = (100, 255, 100)
@@ -129,12 +136,7 @@ class findFaceGetPulse(object):
 	#cv2.putText(
         #    self.frame_out, str(EMOTIONS),
         #    (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
-	if ALARM_ON:
-		cv2.putText(self.frame_out, "DROWSINESS ALERT!", (10, 50),
-			    cv2.FONT_HERSHEY_PLAIN, 1.25, (0, 0, 255), 2)
-	else:
-		cv2.putText(self.frame_out, "AWAKE", (10, 50),
-			    cv2.FONT_HERSHEY_PLAIN, 1.25, (0, 0, 255), 2)
+	
         detected = list(self.face_cascade.detectMultiScale(self.gray,
                                                             scaleFactor=1.3,
                                                             minNeighbors=4,
